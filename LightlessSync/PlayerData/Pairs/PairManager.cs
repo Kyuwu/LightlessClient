@@ -1,4 +1,4 @@
-﻿using Dalamud.Plugin.Services;
+using Dalamud.Plugin.Services;
 using LightlessSync.API.Data;
 using LightlessSync.API.Data.Comparer;
 using LightlessSync.API.Data.Extensions;
@@ -346,6 +346,29 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         {
             pair.Value.AddContextMenu(args);
         }
+
+        AddPairRequestContextMenu(args);
+    }
+
+    private void AddPairRequestContextMenu(Dalamud.Game.Gui.ContextMenu.IMenuOpenedArgs args)
+    {
+        if (args.Target is not Dalamud.Game.Gui.ContextMenu.MenuTargetDefault target) return;
+        
+        //var dalamudUtil = Mediator.GetService<Services.DalamudUtilService>();
+        var character = dalamudUtil.GetCharacterFromObjectId(target.TargetObjectId);
+        if (character == null) return;
+
+        var playerName = character.Name.TextValue;
+        
+        // Check if this player is already paired
+        bool isAlreadyPaired = _allClientPairs.Any(p => 
+            string.Equals(p.Value.PlayerName, playerName, StringComparison.OrdinalIgnoreCase) && 
+            p.Value.IsVisible);
+
+        if (!isAlreadyPaired && !string.IsNullOrEmpty(playerName))
+        {
+            Pair.AddPairRequestContextMenu(args, Mediator, dalamudUtil);
+        }
     }
 
     private Lazy<List<Pair>> DirectPairsLazy() => new(() => _allClientPairs.Select(k => k.Value)
@@ -404,5 +427,30 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         _groupPairsInternal = GroupPairsLazy();
         _pairsWithGroupsInternal = PairsWithGroupsLazy();
         Mediator.Publish(new RefreshUiMessage());
+    }
+
+    private async void HandlePairRequest(string playerName, uint objectId)
+    {
+        try
+        {
+            Logger.LogDebug("Handling pair request for player: {PlayerName} (ObjectId: {ObjectId})", playerName, objectId);
+            
+            // Send pair request via API
+            //Mediator.Publish(new UserAddPairMessage(playerName));
+            
+            // Show notification to user
+            Mediator.Publish(new NotificationMessage("Pair Request", 
+                $"Sent pairing request to {playerName}", 
+                NotificationType.Info, 
+                TimeSpan.FromSeconds(3)));
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to handle pair request for {PlayerName}", playerName);
+            Mediator.Publish(new NotificationMessage("Pair Request Failed", 
+                $"Failed to send pairing request to {playerName}", 
+                NotificationType.Error, 
+                TimeSpan.FromSeconds(5)));
+        }
     }
 }

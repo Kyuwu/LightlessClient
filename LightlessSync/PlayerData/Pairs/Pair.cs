@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text.SeStringHandling;
 using LightlessSync.API.Data;
 using LightlessSync.API.Data.Enum;
@@ -100,6 +100,29 @@ public class Pair
             OnClicked = (a) => _mediator.Publish(new CyclePauseMessage(UserData)),
             UseDefaultPrefix = false,
             PrefixChar = 'M',
+            PrefixColor = 526
+        });
+    }
+
+    public static void AddPairRequestContextMenu(IMenuOpenedArgs args, LightlessMediator mediator, Services.DalamudUtilService dalamudUtil)
+    {
+        if (args.Target is not MenuTargetDefault target) return;
+        
+        var character = dalamudUtil.GetCharacterFromObjectId(target.TargetObjectId);
+        if (character == null) return;
+
+        var playerName = character.Name.TextValue;
+        if (string.IsNullOrEmpty(playerName)) return;
+
+        SeStringBuilder seStringBuilder = new();
+        var requestPairSeString = seStringBuilder.AddText("Request Pair").Build();
+        
+        args.AddMenuItem(new MenuItem()
+        {
+            Name = requestPairSeString,
+            OnClicked = (a) => mediator.Publish(new RequestPairMessage(playerName, target.TargetObjectId)),
+            UseDefaultPrefix = false,
+            PrefixChar = 'L',
             PrefixColor = 526
         });
     }

@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Game.ClientState.Objects.Types;
 using LightlessSync.API.Data;
 using LightlessSync.API.Dto;
 using LightlessSync.API.Dto.CharaData;
@@ -93,6 +93,7 @@ public record GPoseLobbyReceiveCharaData(CharaDataDownloadDto CharaDataDownloadD
 public record GPoseLobbyReceivePoseData(UserData UserData, PoseData PoseData) : MessageBase;
 public record GPoseLobbyReceiveWorldData(UserData UserData, WorldData WorldData) : MessageBase;
 public record OpenCharaDataHubWithFilterMessage(UserData UserData) : MessageBase;
+public record RequestPairMessage(string PlayerName, uint ObjectId) : MessageBase;
 
 public record VisibilityChange : MessageBase;
 #pragma warning restore S2094
