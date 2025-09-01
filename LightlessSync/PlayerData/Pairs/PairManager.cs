@@ -21,19 +21,22 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     private readonly LightlessConfigService _configurationService;
     private readonly IContextMenu _dalamudContextMenu;
     private readonly PairFactory _pairFactory;
+    private readonly LightlessSync.Services.DalamudUtilService _dalamudUtilService;
     private Lazy<List<Pair>> _directPairsInternal;
     private Lazy<Dictionary<GroupFullInfoDto, List<Pair>>> _groupPairsInternal;
     private Lazy<Dictionary<Pair, List<GroupFullInfoDto>>> _pairsWithGroupsInternal;
 
     public PairManager(ILogger<PairManager> logger, PairFactory pairFactory,
                 LightlessConfigService configurationService, LightlessMediator mediator,
-                IContextMenu dalamudContextMenu) : base(logger, mediator)
+                IContextMenu dalamudContextMenu, LightlessSync.Services.DalamudUtilService dalamudUtilService) : base(logger, mediator)
     {
         _pairFactory = pairFactory;
         _configurationService = configurationService;
         _dalamudContextMenu = dalamudContextMenu;
+        _dalamudUtilService = dalamudUtilService;
         Mediator.Subscribe<DisconnectedMessage>(this, (_) => ClearPairs());
         Mediator.Subscribe<CutsceneEndMessage>(this, (_) => ReapplyPairData());
+        Mediator.Subscribe<RequestPairMessage>(this, HandlePairRequest);
         _directPairsInternal = DirectPairsLazy();
         _groupPairsInternal = GroupPairsLazy();
         _pairsWithGroupsInternal = PairsWithGroupsLazy();
@@ -354,8 +357,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         if (args.Target is not Dalamud.Game.Gui.ContextMenu.MenuTargetDefault target) return;
         
-        //var dalamudUtil = Mediator.GetService<Services.DalamudUtilService>();
-        var character = dalamudUtil.GetCharacterFromObjectId(target.TargetObjectId);
+        var character = _dalamudUtilService.GetCharacterFromObjectId(target.TargetObjectId);
         if (character == null) return;
 
         var playerName = character.Name.TextValue;
@@ -367,7 +369,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
 
         if (!isAlreadyPaired && !string.IsNullOrEmpty(playerName))
         {
-            Pair.AddPairRequestContextMenu(args, Mediator, dalamudUtil);
+            Pair.AddPairRequestContextMenu(args, Mediator, _dalamudUtilService);
         }
     }
 
@@ -429,26 +431,53 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         Mediator.Publish(new RefreshUiMessage());
     }
 
-    private async void HandlePairRequest(string playerName, uint objectId)
+    private async void HandlePairRequest(RequestPairMessage message)
     {
         try
         {
-            Logger.LogDebug("Handling pair request for player: {PlayerName} (ObjectId: {ObjectId})", playerName, objectId);
-            
-            // Send pair request via API
-            //Mediator.Publish(new UserAddPairMessage(playerName));
-            
+            Logger.LogDebug("Handling pair request for player: {PlayerName} (ObjectId: {ObjectId})", message.PlayerName, message.ObjectId);
+
+            // Get character from object ID to extract proper character data
+            var character = await _dalamudUtilService.RunOnFrameworkThread(() =>
+                _dalamudUtilService.GetCharacterFromObjectId(message.ObjectId)).ConfigureAwait(true);
+
+            if (character == null)
+            {
+                Mediator.Publish(new NotificationMessage("Pair Request Failed",
+                    $"Could not find character data for {message.PlayerName}",
+                    NotificationType.Error,
+                    TimeSpan.FromSeconds(5)));
+                return;
+            }
+
+            // Get the character's ContentID for proper identification
+            var characterId = await _dalamudUtilService.RunOnFrameworkThread(() =>
+            {
+                unsafe
+                {
+                    var battleChara = (FFXIVClientStructs.FFXIV.Client.Game.Character.BattleChara*)character.Address;
+                    return battleChara->Character.ContentId.ToString();
+                }
+            }).ConfigureAwait(true);
+
+            //// Create proper UserData with CharacterID
+            var userData = new UserData(characterId, message.PlayerName);
+
+            // Send pair request via API instead of creating direct pair
+            // This will be handled by the API controller
+            Mediator.Publish(new SendPairRequestMessage(userData, message.PlayerName));
+
             // Show notification to user
             Mediator.Publish(new NotificationMessage("Pair Request", 
-                $"Sent pairing request to {playerName}", 
+                $"Sent pair request to {message.PlayerName}", 
                 NotificationType.Info, 
                 TimeSpan.FromSeconds(3)));
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to handle pair request for {PlayerName}", playerName);
+            Logger.LogError(ex, "Failed to handle pair request for {PlayerName}", message.PlayerName);
             Mediator.Publish(new NotificationMessage("Pair Request Failed", 
-                $"Failed to send pairing request to {playerName}", 
+                $"Failed to send pair request to {message.PlayerName}", 
                 NotificationType.Error, 
                 TimeSpan.FromSeconds(5)));
         }

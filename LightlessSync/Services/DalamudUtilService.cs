@@ -543,6 +543,17 @@ public class DalamudUtilService : IHostedService, IMediatorSubscriber
         return result;
     }
 
+    public ICharacter? GetCharacterFromObjectId(ulong objectId)
+    {
+        EnsureIsOnFramework();
+        var obj = _objectTable.FirstOrDefault(o => o.EntityId == objectId);
+        if (obj?.ObjectKind == Dalamud.Game.ClientState.Objects.Enums.ObjectKind.Player)
+        {
+            return (ICharacter)obj;
+        }
+        return null;
+    }
+
     private unsafe void CheckCharacterForDrawing(nint address, string characterName)
     {
         var gameObj = (GameObject*)address;

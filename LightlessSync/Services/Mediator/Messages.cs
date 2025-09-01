@@ -94,6 +94,9 @@ public record GPoseLobbyReceivePoseData(UserData UserData, PoseData PoseData) : 
 public record GPoseLobbyReceiveWorldData(UserData UserData, WorldData WorldData) : MessageBase;
 public record OpenCharaDataHubWithFilterMessage(UserData UserData) : MessageBase;
 public record RequestPairMessage(string PlayerName, uint ObjectId) : MessageBase;
+public record SendPairRequestMessage(UserData TargetUser, string CharacterName) : MessageBase;
+public record PairRequestReceivedMessage(UserData RequesterUser, string RequesterCharacterName) : MessageBase;
+public record PairRequestResponseMessage(UserData RequesterUser, bool Accepted) : MessageBase;
 
 public record VisibilityChange : MessageBase;
 #pragma warning restore S2094

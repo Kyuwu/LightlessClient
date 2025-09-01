@@ -104,11 +104,11 @@ public class Pair
         });
     }
 
-    public static void AddPairRequestContextMenu(IMenuOpenedArgs args, LightlessMediator mediator, Services.DalamudUtilService dalamudUtil)
+    public static void AddPairRequestContextMenu(IMenuOpenedArgs args, LightlessMediator mediator, LightlessSync.Services.DalamudUtilService dalamudUtil)
     {
         if (args.Target is not MenuTargetDefault target) return;
-        
-        var character = dalamudUtil.GetCharacterFromObjectId(target.TargetObjectId);
+
+        var character = dalamudUtil.GetCharacterFromObjectId((uint) target.TargetObjectId);
         if (character == null) return;
 
         var playerName = character.Name.TextValue;
@@ -120,7 +120,7 @@ public class Pair
         args.AddMenuItem(new MenuItem()
         {
             Name = requestPairSeString,
-            OnClicked = (a) => mediator.Publish(new RequestPairMessage(playerName, target.TargetObjectId)),
+            OnClicked = (a) => mediator.Publish(new RequestPairMessage(playerName, (uint)target.TargetObjectId)),
             UseDefaultPrefix = false,
             PrefixChar = 'L',
             PrefixColor = 526

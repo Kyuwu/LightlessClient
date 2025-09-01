@@ -1,4 +1,4 @@
-﻿using Dalamud.Game;
+using Dalamud.Game;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Interface.ImGuiFileDialog;
 using Dalamud.Interface.Windowing;
@@ -140,7 +140,7 @@ public sealed class Plugin : IDalamudPlugin
             collection.AddSingleton((s) => new DtrEntry(s.GetRequiredService<ILogger<DtrEntry>>(), dtrBar, s.GetRequiredService<LightlessConfigService>(),
                 s.GetRequiredService<LightlessMediator>(), s.GetRequiredService<PairManager>(), s.GetRequiredService<ApiController>()));
             collection.AddSingleton(s => new PairManager(s.GetRequiredService<ILogger<PairManager>>(), s.GetRequiredService<PairFactory>(),
-                s.GetRequiredService<LightlessConfigService>(), s.GetRequiredService<LightlessMediator>(), contextMenu));
+                s.GetRequiredService<LightlessConfigService>(), s.GetRequiredService<LightlessMediator>(), contextMenu, s.GetRequiredService<DalamudUtilService>()));
             collection.AddSingleton<RedrawManager>();
             collection.AddSingleton((s) => new IpcCallerPenumbra(s.GetRequiredService<ILogger<IpcCallerPenumbra>>(), pluginInterface,
                 s.GetRequiredService<DalamudUtilService>(), s.GetRequiredService<LightlessMediator>(), s.GetRequiredService<RedrawManager>()));
