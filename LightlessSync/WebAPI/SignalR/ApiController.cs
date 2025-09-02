@@ -370,7 +370,16 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IL
         if (!IsConnected) return;
         try
         {
+            var request = _pairManager.PendingPairRequests.FirstOrDefault(r => r.RequesterUserId == userDto.User.UID);
             await _lightlessHub!.InvokeAsync(nameof(ILightlessHub.UserPairRequestAccept), userDto).ConfigureAwait(false);
+            if (request != null)
+            {
+                Mediator.Publish(new NotificationMessage(
+                    "Pair Request Accepted",
+                    $"You accepted the pair request from {request.RequesterCharacterName}",
+                    NotificationType.Info,
+                    TimeSpan.FromSeconds(3)));
+            }
         }
         catch (Exception ex)
         {
@@ -383,7 +392,16 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IL
         if (!IsConnected) return;
         try
         {
+            var request = _pairManager.PendingPairRequests.FirstOrDefault(r => r.RequesterUserId == userDto.User.UID);
             await _lightlessHub!.InvokeAsync(nameof(ILightlessHub.UserPairRequestDeny), userDto).ConfigureAwait(false);
+            if (request != null)
+            {
+                Mediator.Publish(new NotificationMessage(
+                    "Pair Request Denied",
+                    $"You denied the pair request from {request.RequesterCharacterName}",
+                    NotificationType.Warning,
+                    TimeSpan.FromSeconds(3)));
+            }
         }
         catch (Exception ex)
         {

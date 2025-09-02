@@ -103,6 +103,11 @@ public class DrawPairRequests : IMediatorSubscriber
         if (remainingTime.TotalSeconds <= 0)
         {
             _pairManager.PendingPairRequests.RemoveAt(index);
+            Mediator.Publish(new NotificationMessage(
+                "Pair Request Expired",
+                $"The pair request from {request.RequesterCharacterName} has expired.",
+                NotificationType.Warning,
+                TimeSpan.FromSeconds(5)));
             return;
         }
         var progress = Math.Max(0f, Math.Min(1f, (float)(remainingTime.TotalSeconds / 30f)));
@@ -200,14 +205,5 @@ public class DrawPairRequests : IMediatorSubscriber
         }
 
         _pairManager.PendingPairRequests.Remove(request);
-
-        var action = accepted ? "accepted" : "denied";
-        _logger.LogInformation("Pair request from {CharacterName} {Action}", request.RequesterCharacterName, action);
-
-        _mediator.Publish(new NotificationMessage(
-            $"Pair Request {(accepted ? "Accepted" : "Denied")}",
-            $"You {action} the pair request from {request.RequesterCharacterName}",
-            accepted ? NotificationType.Info : NotificationType.Warning,
-            TimeSpan.FromSeconds(3)));
     }
 }
