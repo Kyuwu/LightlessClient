@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Text.SeStringHandling;
+using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Interface.ImGuiNotification;
 using Dalamud.Plugin.Services;
 using LightlessSync.LightlessConfiguration;
@@ -31,6 +31,7 @@ public class NotificationService : DisposableMediatorSubscriberBase, IHostedServ
     public Task StartAsync(CancellationToken cancellationToken)
     {
         Mediator.Subscribe<NotificationMessage>(this, ShowNotification);
+        Mediator.Subscribe<ClickableNotificationMessage>(this, ShowClickableNotification);
         return Task.CompletedTask;
     }
 
@@ -117,6 +118,72 @@ public class NotificationService : DisposableMediatorSubscriberBase, IHostedServ
             case NotificationLocation.Nowhere:
                 break;
         }
+    }
+
+    private void ShowClickableNotification(ClickableNotificationMessage msg)
+    {
+        Logger.LogInformation("{msg}", msg.ToString());
+
+        if (!_dalamudUtilService.IsLoggedIn) return;
+
+        switch (msg.Type)
+        {
+            case NotificationType.Info:
+                ShowClickableNotificationLocationBased(msg, _configurationService.Current.InfoNotification);
+                break;
+
+            case NotificationType.Warning:
+                ShowClickableNotificationLocationBased(msg, _configurationService.Current.WarningNotification);
+                break;
+
+            case NotificationType.Error:
+                ShowClickableNotificationLocationBased(msg, _configurationService.Current.ErrorNotification);
+                break;
+        }
+    }
+
+    private void ShowClickableNotificationLocationBased(ClickableNotificationMessage msg, NotificationLocation location)
+    {
+        switch (location)
+        {
+            case NotificationLocation.Toast:
+                ShowClickableToast(msg);
+                break;
+
+            case NotificationLocation.Chat:
+                ShowChat(new NotificationMessage(msg.Title, msg.Message, msg.Type, msg.TimeShownOnScreen));
+                break;
+
+            case NotificationLocation.Both:
+                ShowClickableToast(msg);
+                ShowChat(new NotificationMessage(msg.Title, msg.Message, msg.Type, msg.TimeShownOnScreen));
+                break;
+
+            case NotificationLocation.Nowhere:
+                break;
+        }
+    }
+
+    private void ShowClickableToast(ClickableNotificationMessage msg)
+    {
+        // Since Dalamud notifications don't support click events, 
+        // we'll just show a regular notification with instructional text
+        Dalamud.Interface.ImGuiNotification.NotificationType dalamudType = msg.Type switch
+        {
+            NotificationType.Error => Dalamud.Interface.ImGuiNotification.NotificationType.Error,
+            NotificationType.Warning => Dalamud.Interface.ImGuiNotification.NotificationType.Warning,
+            NotificationType.Info => Dalamud.Interface.ImGuiNotification.NotificationType.Info,
+            _ => Dalamud.Interface.ImGuiNotification.NotificationType.Info
+        };
+
+        _notificationManager.AddNotification(new Notification()
+        {
+            Content = msg.Message ?? string.Empty,
+            Title = msg.Title,
+            Type = dalamudType,
+            Minimized = false,
+            InitialDuration = msg.TimeShownOnScreen ?? TimeSpan.FromSeconds(5)
+        });
     }
 
     private void ShowToast(NotificationMessage msg)
