@@ -1,4 +1,4 @@
-﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
@@ -44,6 +44,7 @@ public class CompactUi : WindowMediatorSubscriberBase
     private readonly TopTabMenu _tabMenu;
     private readonly TagHandler _tagHandler;
     private readonly UiSharedService _uiSharedService;
+    private readonly DrawPairRequests _drawPairRequests;
     private List<IDrawFolder> _drawFolders;
     private Pair? _lastAddedUser;
     private string _lastAddedUserComment = string.Empty;
@@ -74,6 +75,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         _renameTagUi = renameTagUi;
         _ipcManager = ipcManager;
         _tabMenu = new TopTabMenu(Mediator, _apiController, _pairManager, _uiSharedService);
+        _drawPairRequests = new DrawPairRequests(mediator, uiShared, tagHandler, logger);
 
         AllowPinning = false;
         AllowClickthrough = false;
@@ -253,6 +255,9 @@ public class CompactUi : WindowMediatorSubscriberBase
                 + ImGui.GetTextLineHeight() - ImGui.GetStyle().WindowPadding.Y - ImGui.GetStyle().WindowBorderSize) - _transferPartHeight - ImGui.GetCursorPosY();
 
         ImGui.BeginChild("list", new Vector2(_windowContentWidth, ySize), border: false);
+
+        // Draw pair requests at the top
+        _drawPairRequests.Draw();
 
         foreach (var item in _drawFolders)
         {

@@ -1,4 +1,4 @@
-﻿using Dalamud.Utility;
+using Dalamud.Utility;
 using LightlessSync.API.Data;
 using LightlessSync.API.Data.Extensions;
 using LightlessSync.API.Dto;

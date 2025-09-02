@@ -10,6 +10,7 @@ using LightlessSync.PlayerData.Factories;
 using LightlessSync.Services.Events;
 using LightlessSync.Services.Mediator;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using System.Collections.Concurrent;
 
 namespace LightlessSync.PlayerData.Pairs;
@@ -435,9 +436,8 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
     {
         try
         {
-            Logger.LogDebug("Handling pair request for player: {PlayerName} (ObjectId: {ObjectId})", message.PlayerName, message.ObjectId);
+            Logger.LogInformation("Handling pair request for player: {PlayerName} (ObjectId: {ObjectId})", message.PlayerName, message.ObjectId);
 
-            // Get character from object ID to extract proper character data
             var character = await _dalamudUtilService.RunOnFrameworkThread(() =>
                 _dalamudUtilService.GetCharacterFromObjectId(message.ObjectId)).ConfigureAwait(true);
 
@@ -450,7 +450,6 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
                 return;
             }
 
-            // Get the character's ContentID for proper identification
             var characterId = await _dalamudUtilService.RunOnFrameworkThread(() =>
             {
                 unsafe
@@ -460,14 +459,11 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
                 }
             }).ConfigureAwait(true);
 
-            //// Create proper UserData with CharacterID
             var userData = new UserData(characterId, message.PlayerName);
 
-            // Send pair request via API instead of creating direct pair
-            // This will be handled by the API controller
+            // Send pair request via API or something
             Mediator.Publish(new SendPairRequestMessage(userData, message.PlayerName));
-
-            // Show notification to user
+            Logger.LogInformation("Sent pair request to {PlayerName}", message.PlayerName);
             Mediator.Publish(new NotificationMessage("Pair Request", 
                 $"Sent pair request to {message.PlayerName}", 
                 NotificationType.Info, 

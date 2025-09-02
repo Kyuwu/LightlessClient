@@ -9,6 +9,7 @@ using LightlessSync.PlayerData.Handlers;
 using LightlessSync.Services.Mediator;
 using LightlessSync.Services.ServerConfiguration;
 using LightlessSync.Utils;
+using LightlessSync.WebAPI;
 using Microsoft.Extensions.Logging;
 
 namespace LightlessSync.PlayerData.Pairs;
@@ -123,7 +124,7 @@ public class Pair
             OnClicked = (a) => mediator.Publish(new RequestPairMessage(playerName, (uint)target.TargetObjectId)),
             UseDefaultPrefix = false,
             PrefixChar = 'L',
-            PrefixColor = 526
+            PrefixColor = 708
         });
     }
 
