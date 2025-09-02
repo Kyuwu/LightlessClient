@@ -60,6 +60,9 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IL
         Mediator.Subscribe<CyclePauseMessage>(this, (msg) => _ = CyclePauseAsync(msg.UserData));
         Mediator.Subscribe<CensusUpdateMessage>(this, (msg) => _lastCensus = msg);
         Mediator.Subscribe<PauseMessage>(this, (msg) => _ = PauseAsync(msg.UserData));
+        Mediator.Subscribe<SendPairRequestMessage>(this, (msg) => _ = UserRequestPair(new UserDto(msg.TargetUser)));
+        Mediator.Subscribe<AcceptPairRequestMessage>(this, (msg) => UserPairRequestAccept(msg.UserDto));
+        Mediator.Subscribe<DenyPairRequestMessage>(this, (msg) => UserPairRequestDeny(msg.UserDto));
 
         ServerState = ServerState.Offline;
 
@@ -349,6 +352,45 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IL
         return Task.CompletedTask;
     }
 
+    public async Task UserRequestPair(UserDto userDto)
+    {
+        if (!IsConnected) return;
+        try
+        {
+            await _lightlessHub!.InvokeAsync(nameof(ILightlessHub.UserRequestPair), userDto).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error on sending pair request");
+        }
+    }
+
+    public async Task UserPairRequestAccept(UserDto userDto)
+    {
+        if (!IsConnected) return;
+        try
+        {
+            await _lightlessHub!.InvokeAsync(nameof(ILightlessHub.UserPairRequestAccept), userDto).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error on sending pair request accept");
+        }
+    }
+
+    public async Task UserPairRequestDeny(UserDto userDto)
+    {
+        if (!IsConnected) return;
+        try
+        {
+            await _lightlessHub!.InvokeAsync(nameof(ILightlessHub.UserPairRequestDeny), userDto).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Error on sending pair request deny");
+        }
+    }
+
     public async Task PauseAsync(UserData userData)
     {
         var pair = _pairManager.GetOnlineUserPairs().Single(p => p.UserPair != null && p.UserData == userData);
@@ -431,6 +473,7 @@ public sealed partial class ApiController : DisposableMediatorSubscriberBase, IL
         OnUserUpdateSelfPairPermissions(dto => _ = Client_UserUpdateSelfPairPermissions(dto));
         OnUserReceiveUploadStatus(dto => _ = Client_UserReceiveUploadStatus(dto));
         OnUserUpdateProfile(dto => _ = Client_UserUpdateProfile(dto));
+        OnUserReceivePairRequest(dto => _ = Client_UserReceivePairRequest(dto));
         OnUserDefaultPermissionUpdate(dto => _ = Client_UserUpdateDefaultPermissions(dto));
         OnUpdateUserIndividualPairStatusDto(dto => _ = Client_UpdateUserIndividualPairStatusDto(dto));
 

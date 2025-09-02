@@ -3,6 +3,7 @@ using LightlessSync.API.Data;
 using LightlessSync.API.Data.Comparer;
 using LightlessSync.API.Data.Extensions;
 using LightlessSync.API.Dto.Group;
+using LightlessSync.API.Dto;
 using LightlessSync.API.Dto.User;
 using LightlessSync.LightlessConfiguration;
 using LightlessSync.LightlessConfiguration.Models;
@@ -12,12 +13,14 @@ using LightlessSync.Services.Mediator;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace LightlessSync.PlayerData.Pairs;
 
 public sealed class PairManager : DisposableMediatorSubscriberBase
 {
     private readonly ConcurrentDictionary<UserData, Pair> _allClientPairs = new(UserDataComparer.Instance);
+    public List<PendingPairRequestDto> PendingPairRequests { get; } = new();
     private readonly ConcurrentDictionary<GroupData, GroupFullInfoDto> _allGroups = new(GroupDataComparer.Instance);
     private readonly LightlessConfigService _configurationService;
     private readonly IContextMenu _dalamudContextMenu;
@@ -36,6 +39,7 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
         _dalamudContextMenu = dalamudContextMenu;
         _dalamudUtilService = dalamudUtilService;
         Mediator.Subscribe<DisconnectedMessage>(this, (_) => ClearPairs());
+        Mediator.Subscribe<IncomingPairRequestMessage>(this, (msg) => AddPendingPairRequest(msg.PendingPairRequest));
         Mediator.Subscribe<CutsceneEndMessage>(this, (_) => ReapplyPairData());
         Mediator.Subscribe<RequestPairMessage>(this, HandlePairRequest);
         _directPairsInternal = DirectPairsLazy();
@@ -330,6 +334,16 @@ public sealed class PairManager : DisposableMediatorSubscriberBase
             pair.UserPair.IndividualPairStatus = dto.IndividualPairStatus;
             RecreateLazy();
         }
+    }
+
+    private void AddPendingPairRequest(PendingPairRequestDto dto)
+    {
+        if (!PendingPairRequests.Exists(p => string.Equals(p.RequesterUserId, dto.RequesterUserId, StringComparison.Ordinal)))
+        {
+            PendingPairRequests.Add(dto);
+        }
+
+        Mediator.Publish(new RefreshUiMessage());
     }
 
     protected override void Dispose(bool disposing)

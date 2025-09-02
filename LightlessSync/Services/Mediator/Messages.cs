@@ -3,6 +3,7 @@ using LightlessSync.API.Data;
 using LightlessSync.API.Dto;
 using LightlessSync.API.Dto.CharaData;
 using LightlessSync.API.Dto.Group;
+using LightlessSync.API.Dto.User;
 using LightlessSync.LightlessConfiguration.Models;
 using LightlessSync.PlayerData.Handlers;
 using LightlessSync.PlayerData.Pairs;
@@ -97,8 +98,9 @@ public record GPoseLobbyReceiveWorldData(UserData UserData, WorldData WorldData)
 public record OpenCharaDataHubWithFilterMessage(UserData UserData) : MessageBase;
 public record RequestPairMessage(string PlayerName, uint ObjectId) : MessageBase;
 public record SendPairRequestMessage(UserData TargetUser, string CharacterName) : MessageBase;
-public record PairRequestReceivedMessage(UserData RequesterUser, string RequesterCharacterName) : MessageBase;
-public record PairRequestResponseMessage(UserData RequesterUser, bool Accepted) : MessageBase;
+public record IncomingPairRequestMessage(PendingPairRequestDto PendingPairRequest) : MessageBase;
+public record AcceptPairRequestMessage(API.Dto.User.UserDto UserDto) : MessageBase;
+public record DenyPairRequestMessage(API.Dto.User.UserDto UserDto) : MessageBase;
 
 public record VisibilityChange : MessageBase;
 #pragma warning restore S2094

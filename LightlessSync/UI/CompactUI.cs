@@ -6,6 +6,8 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using LightlessSync.API.Data.Extensions;
 using LightlessSync.API.Dto.Group;
+using LightlessSync.API.Dto.User;
+using LightlessSync.API.Data;
 using LightlessSync.Interop.Ipc;
 using LightlessSync.LightlessConfiguration;
 using LightlessSync.PlayerData.Handlers;
@@ -75,7 +77,7 @@ public class CompactUi : WindowMediatorSubscriberBase
         _renameTagUi = renameTagUi;
         _ipcManager = ipcManager;
         _tabMenu = new TopTabMenu(Mediator, _apiController, _pairManager, _uiSharedService);
-        _drawPairRequests = new DrawPairRequests(mediator, uiShared, tagHandler, logger);
+        _drawPairRequests = new DrawPairRequests(mediator, uiShared, tagHandler, logger, _pairManager);
 
         AllowPinning = false;
         AllowClickthrough = false;
@@ -143,6 +145,19 @@ public class CompactUi : WindowMediatorSubscriberBase
 
     protected override void DrawInternal()
     {
+#if DEBUG
+        if (ImGui.Button("Test Pair Request"))
+        {
+            Mediator.Publish(new IncomingPairRequestMessage(new PendingPairRequestDto
+            {
+                RequesterCharacterName = "Dummy Test User",
+                RequesterUserId = "DummyTestUserUID",
+                RequestTime = DateTime.UtcNow
+            }));
+        }
+        ImGui.Separator();
+#endif
+
         _windowContentWidth = UiSharedService.GetWindowContentRegionWidth();
         if (!_apiController.IsCurrentVersion)
         {

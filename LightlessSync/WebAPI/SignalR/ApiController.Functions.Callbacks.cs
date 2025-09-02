@@ -1,4 +1,4 @@
-﻿using LightlessSync.API.Data;
+using LightlessSync.API.Data;
 using LightlessSync.API.Data.Enum;
 using LightlessSync.API.Dto;
 using LightlessSync.API.Dto.CharaData;
@@ -181,6 +181,13 @@ public partial class ApiController
         return Task.CompletedTask;
     }
 
+    public Task Client_UserReceivePairRequest(PendingPairRequestDto dto)
+    {
+        Logger.LogDebug("Client_UserReceivePairRequest: {dto}", dto);
+        Mediator.Publish(new IncomingPairRequestMessage(dto));
+        return Task.CompletedTask;
+    }
+
     public Task Client_UserUpdateSelfPairPermissions(UserPermissionsDto dto)
     {
         Logger.LogDebug("Client_UserUpdateSelfPairPermissions: {dto}", dto);
@@ -353,6 +360,12 @@ public partial class ApiController
     {
         if (_initialized) return;
         _lightlessHub!.On(nameof(Client_UserUpdateSelfPairPermissions), act);
+    }
+
+    public void OnUserReceivePairRequest(Action<PendingPairRequestDto> act)
+    {
+        if (_initialized) return;
+        _lightlessHub!.On(nameof(Client_UserReceivePairRequest), act);
     }
 
     public void OnGposeLobbyJoin(Action<UserData> act)
